@@ -21,6 +21,16 @@ import (
 
 const requestTokenKey = "_token"
 
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (sr *statusRecorder) WriteHeader(status int) {
+	sr.status = status
+	sr.ResponseWriter.WriteHeader(status)
+}
+
 // Handler wraps h, generating new token for it.
 // It also logs request beginning and ending.
 // gorilla/context.Clear is called after handler is done.
@@ -29,8 +39,9 @@ func Handler(h http.Handler) http.Handler {
 		token := fmt.Sprintf("%x", md5.Sum([]byte(r.URL.String()+r.RemoteAddr+time.Now().String())))
 		context.Set(r, requestTokenKey, token)
 		Logln(r, "new request", r.Method, r.URL)
-		h.ServeHTTP(rw, r)
-		Logln(r, "done")
+		sr := &statusRecorder{ResponseWriter: rw}
+		h.ServeHTTP(sr, r)
+		Logln(r, "done; status=", http.StatusText(sr.status))
 	}))
 }
 
@@ -49,8 +60,9 @@ func NoClearHandler(h http.Handler) http.Handler {
 		token := fmt.Sprintf("%x", md5.Sum([]byte(r.URL.String()+r.RemoteAddr+time.Now().String())))
 		context.Set(r, requestTokenKey, token)
 		Logln(r, "new request", r.Method, r.URL)
-		h.ServeHTTP(rw, r)
-		Logln(r, "done")
+		sr := &statusRecorder{ResponseWriter: rw}
+		h.ServeHTTP(sr, r)
+		Logln(r, "done; status=", http.StatusText(sr.status))
 	})
 }
 
