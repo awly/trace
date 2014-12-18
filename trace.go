@@ -48,7 +48,7 @@ func Handler(h http.Handler) http.Handler {
 		Logln(r, "new request", r.Method, r.URL)
 		sr := &statusRecorder{ResponseWriter: rw}
 		h.ServeHTTP(sr, r)
-		Logln(r, "done; status=", sr.getStatus())
+		Logln(r, "done; status:", sr.getStatus())
 	}))
 }
 
@@ -69,7 +69,7 @@ func NoClearHandler(h http.Handler) http.Handler {
 		Logln(r, "new request", r.Method, r.URL)
 		sr := &statusRecorder{ResponseWriter: rw}
 		h.ServeHTTP(sr, r)
-		Logln(r, "done; status=", http.StatusText(sr.status))
+		Logln(r, "done; status:", sr.getStatus())
 	})
 }
 
