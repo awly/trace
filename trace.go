@@ -31,6 +31,13 @@ func (sr *statusRecorder) WriteHeader(status int) {
 	sr.ResponseWriter.WriteHeader(status)
 }
 
+func (sr statusRecorder) getStatus() string {
+	if sr.status == 0 {
+		sr.status = http.StatusOK
+	}
+	return http.StatusText(sr.status)
+}
+
 // Handler wraps h, generating new token for it.
 // It also logs request beginning and ending.
 // gorilla/context.Clear is called after handler is done.
@@ -41,7 +48,7 @@ func Handler(h http.Handler) http.Handler {
 		Logln(r, "new request", r.Method, r.URL)
 		sr := &statusRecorder{ResponseWriter: rw}
 		h.ServeHTTP(sr, r)
-		Logln(r, "done; status=", http.StatusText(sr.status))
+		Logln(r, "done; status=", sr.getStatus())
 	}))
 }
 
