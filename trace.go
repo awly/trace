@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/context"
@@ -35,7 +36,7 @@ func (sr statusRecorder) getStatus() string {
 	if sr.status == 0 {
 		sr.status = http.StatusOK
 	}
-	return http.StatusText(sr.status)
+	return strconv.Itoa(sr.status) + " " + http.StatusText(sr.status)
 }
 
 // Handler wraps h, generating new token for it.
