@@ -10,9 +10,12 @@
 package trace
 
 import (
+	"bufio"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -30,6 +33,14 @@ type statusRecorder struct {
 func (sr *statusRecorder) WriteHeader(status int) {
 	sr.status = status
 	sr.ResponseWriter.WriteHeader(status)
+}
+
+func (sr *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hj, ok := sr.ResponseWriter.(http.Hijacker); ok {
+		return hj.Hijack()
+	}
+
+	return nil, nil, errors.New("Hijack not supported")
 }
 
 func (sr statusRecorder) getStatus() string {
