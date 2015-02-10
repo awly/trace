@@ -55,12 +55,13 @@ func (sr statusRecorder) getStatus() string {
 // gorilla/context.Clear is called after handler is done.
 func Handler(h http.Handler) http.Handler {
 	return context.ClearHandler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		token := fmt.Sprintf("%x", md5.Sum([]byte(r.URL.String()+r.RemoteAddr+time.Now().String())))
 		context.Set(r, requestTokenKey, token)
 		Logln(r, "new request", r.Method, r.URL)
 		sr := &statusRecorder{ResponseWriter: rw}
 		h.ServeHTTP(sr, r)
-		Logln(r, "done; status:", sr.getStatus())
+		Logln(r, "done, status:", sr.getStatus(), "time:", time.Since(start))
 	}))
 }
 
@@ -76,12 +77,13 @@ func NoLogHandler(h http.Handler) http.Handler {
 // NoClearHandler is like Handler but it doesn't clear gorilla/context.
 func NoClearHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 		token := fmt.Sprintf("%x", md5.Sum([]byte(r.URL.String()+r.RemoteAddr+time.Now().String())))
 		context.Set(r, requestTokenKey, token)
 		Logln(r, "new request", r.Method, r.URL)
 		sr := &statusRecorder{ResponseWriter: rw}
 		h.ServeHTTP(sr, r)
-		Logln(r, "done; status:", sr.getStatus())
+		Logln(r, "done, status:", sr.getStatus(), "time:", time.Since(start))
 	})
 }
 
