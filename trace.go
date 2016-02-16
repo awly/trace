@@ -96,6 +96,25 @@ func NoLogClearHandler(h http.Handler) http.Handler {
 	})
 }
 
+// KVPHandler is like Handler but logs the token as key-value pair.
+// This means that instead of
+//     [timestamp] [token] [message]
+// you will see
+//     [timestamp] request_id=[token] [message]
+//
+// This format is easier to deal with using log parsing systems, such as Splunk.
+func KVPHandler(h http.Handler) http.Handler {
+	return context.ClearHandler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		token := fmt.Sprintf("request_id=%x", md5.Sum([]byte(r.URL.String()+r.RemoteAddr+time.Now().String())))
+		context.Set(r, requestTokenKey, token)
+		Logln(r, "new request", r.Method, r.URL)
+		sr := &statusRecorder{ResponseWriter: rw}
+		start := time.Now()
+		h.ServeHTTP(sr, r)
+		Logln(r, "done, status:", sr.getStatus(), "time:", time.Since(start))
+	}))
+}
+
 // Token returns generated token for request or empty string it's not present
 func Token(r *http.Request) string {
 	tok := context.Get(r, requestTokenKey)
