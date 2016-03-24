@@ -18,6 +18,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/context"
@@ -115,13 +116,34 @@ func KVPHandler(h http.Handler) http.Handler {
 	}))
 }
 
-// Token returns generated token for request or empty string it's not present
+// Token returns generated token for request or empty string it's not present.
+// The returned token is formatted as a key-value pair, e.g.
+// "request_id=token". If you need just the token not in KVP form, use
+// TokenPlain.
+//
+// The reason for this to prepend "request_id=" is to match our logging format
+// and make log parsing easier.
 func Token(r *http.Request) string {
 	tok := context.Get(r, requestTokenKey)
 	if toks, ok := tok.(string); ok {
 		return toks
 	}
 	return ""
+}
+
+// TokenPlain returns generated token for request or empty string it's not present.
+// In case token is not formatted correctly, TokenPlain panics.
+func TokenPlain(r *http.Request) string {
+	tok := context.Get(r, requestTokenKey)
+	toks, ok := tok.(string)
+	if !ok {
+		return ""
+	}
+	parts := strings.Split(toks, "=")
+	if len(parts) != 2 {
+		panic("trace: malformed request token: " + toks)
+	}
+	return parts[1]
 }
 
 // Log forwards vals to log.Print and prepends request token
